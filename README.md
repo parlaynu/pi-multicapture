@@ -1,10 +1,10 @@
 # RaspberryPi Camera Streaming
 
-Stream multiple cameras to a single server for storage or preview. The architecture is to run a sink process
-(currently only the storage sink which saves images to disk) and one or more camera streaming sinks and they 
-will all send their images to the sink for further action.
+Stream multiple cameras to a single server for central storage. 
 
-It has camera sources/streamers for the raspberry-pi and jetson nano.
+The system provides image streaming sources for RaspberryPi and JetsonNano and a single streaming sink which
+saves jpeg images to disk. You can run a single storage sink on your network and multiple camera streaming
+sources and the sink will save the images locally.
 
 This is surprisingly simple to setup and run with the only requirements over what is needed on each system
 to run their cameras in python is pyzmq.
@@ -17,12 +17,13 @@ I'll get around to a clean build at some point and will update the documentation
 
 ## Quickstart
 
-The tools use pyzmq to send images over the network. On the pi and the jetson nano, install these with pip
+The tools use pyzmq to send images over the network. On the pi and the jetson nano, install this with pip
 in the user install location. Virtual environments won't work on these devices as they need system installed
-versions of other libraries to access the camera hardware.
+versions of other libraries to access the camera hardware. See the `requirements.txt` file for the specific
+version that I have built and tested with.
 
-On the sink machine, run the sink server. This tells the server to listen for connections on all interfaces and 
-to write images to a directory called local.
+To get started, on the sink machine, run the sink server. This command below tells the server to listen for 
+connections on all interfaces and to write images to a directory called local.
 
     $ ./storage-sink.py -a local
 
@@ -30,8 +31,9 @@ Then on each device with the camera, run the streamer, for example:
 
     $ ./rpi-streamer.py --mode 6 --fps 2 --hflip --vflip 192.168.1.101
 
-This puts the camera in mode 6 (this is 1920x1080 for my camera), captures 2 frames per second, flips the image horizontally 
-and vertically so it show up the right way, and sends the images to the sink running at address 192.168.1.101.
+This puts the camera in mode 6 (this is 1920x1080 for my camera), captures and streams images at 2 frames per second, 
+flips the image horizontally and vertically so it show up the right way, and sends the images to the sink running at 
+address 192.168.1.101.
 
 ## Sinks
 
@@ -54,21 +56,19 @@ The full usage is:
 This receives images from any number of streamers and writes the images to disk.
 
     $ ./storage-sink.py  -a local
-    libzmq version is 4.3.4
-     pyzmq version is 25.1.1
-    saving local/jetbot/image_0000.jpg (1359935 bytes)
+    saving local/jetson/image_0000.jpg (1359935 bytes)
     saving local/pi-cam02/image_0000.jpg (633332 bytes)
     saving local/pi-cam03/image_0000.jpg (577508 bytes)
-    saving local/jetbot/image_0001.jpg (1360378 bytes)
+    saving local/jetson/image_0001.jpg (1360378 bytes)
     saving local/pi-cam02/image_0001.jpg (632811 bytes)
     saving local/pi-cam03/image_0001.jpg (576822 bytes)
-    saving local/jetbot/image_0002.jpg (1361347 bytes)
+    saving local/jetson/image_0002.jpg (1361347 bytes)
     saving local/pi-cam02/image_0002.jpg (633313 bytes)
     saving local/pi-cam03/image_0002.jpg (577065 bytes)
-    saving local/jetbot/image_0003.jpg (1361784 bytes)
+    saving local/jetson/image_0003.jpg (1361784 bytes)
     saving local/pi-cam02/image_0003.jpg (632961 bytes)
     saving local/pi-cam03/image_0003.jpg (576485 bytes)
-    saving local/jetbot/image_0004.jpg (1361108 bytes)
+    saving local/jetson/image_0004.jpg (1361108 bytes)
     saving local/pi-cam02/image_0004.jpg (632212 bytes)
     saving local/pi-cam03/image_0004.jpg (632460 bytes)
 
