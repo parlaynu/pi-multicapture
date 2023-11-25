@@ -42,7 +42,7 @@ address 192.168.1.101.
 The full usage is:
 
     $ ./storage-sink.py -h
-    usage: storage-sink.py [-h] [-a] [-p PORT] outdir
+    usage: storage-sink.py [-h] [-a] [-p PORT] [-i] outdir
     
     positional arguments:
       outdir                location to save images
@@ -51,11 +51,13 @@ The full usage is:
       -h, --help            show this help message and exit
       -a, --all             listen on all interfaces
       -p PORT, --port PORT  port to listen on
+      -i, --ipc             use the IPC transport
 
 
 This receives images from any number of streamers and writes the images to disk.
 
     $ ./storage-sink.py  -a local
+    listening at tcp://192.168.1.137:8089
     saving local/jetson/image_0000.jpg (1359935 bytes)
     saving local/pi-cam02/image_0000.jpg (633332 bytes)
     saving local/pi-cam03/image_0000.jpg (577508 bytes)
@@ -83,50 +85,54 @@ Not yet implemented.
 
 The full usage is:
 
-    $ ./rpi-streamer.py -h
-    usage: rpi-streamer.py [-h] [-n NAME] [-m MODE] [-r FPS] [--hflip] [--vflip] [-c] server [port]
+    $ ./picam2-streamer.py -h
+    usage: picam2-streamer.py [-h] [-n NAME] [-l LIMIT] [-r FPS] [-m MODE] [--hflip] [--vflip] url
     
     positional arguments:
-      server                address of the server
-      port                  port to listen on
+      url                   the url to stream to (tcp://<address>:<port> or ipc://<path>)
       
-    optional arguments:
+    options:
       -h, --help            show this help message and exit
       -n NAME, --name NAME  the name of this node
+      -l LIMIT, --limit LIMIT
+                            total frames to send
+      -r FPS, --fps FPS     camera frame rate
       -m MODE, --mode MODE  the camera mode
-      -r FPS, --fps FPS     capture frames per second
       --hflip               flip the image horizontally
       --vflip               flip the image vertically
 
 A typical example would be:
 
-    ./rpi-streamer.py --mode 6 --fps 2 --hflip --vflip 192.168.1.111
+    ./picam2-streamer.py --mode 6 --fps 2 --hflip --vflip tcp://192.168.1.137:8089
 
-This will stream images to the sink running on host '192.168.1.111' listening on the default port.
+This will stream images to the sink running on host '192.168.1.137' listening on port 8089.
 
 ### Jetson Streamer
 
 Full usage is:
 
-    $ ./jetson-streamer.py -h
-    usage: jetson-streamer.py [-h] [-n NAME] [-r FPS] [--hflip] [--vflip] [-c]
-                              server [port]
-                              
+    $ ./nvargus-streamer.py -h
+    usage: nvargus-streamer.py [-h] [-n NAME] [-l LIMIT] [-r FPS] [--hflip]
+                               [--vflip] [-c]
+                               url
+                               
     positional arguments:
-      server                address of the server
-      port                  port to listen on
-      
+      url                   the url to stream to (tcp://<address>:<port> or
+                            ipc://<path>)
+                            
     optional arguments:
       -h, --help            show this help message and exit
       -n NAME, --name NAME  the name of this node
-      -r FPS, --fps FPS     capture frames per second
+      -l LIMIT, --limit LIMIT
+                            limit the number of frames to send
+      -r FPS, --fps FPS     camera frame rate
       --hflip               flip the image horizontally
       --vflip               flip the image vertically
       -c, --centre          crop the centre square of the image
   
 A typical example would be:
 
-      ./jetson-streamer.py --fps 2 --hflip --vflip 192.168.1.111
+      ./nvargus-streamer.py --fps 2 --hflip --vflip tcp://192.168.1.137:8089
   
-This will stream images to the sink running on host '192.168.1.111' listening on the default port.
+This will stream images to the sink running on host '192.168.1.137' listening on port 8089.
 
