@@ -26,6 +26,7 @@ To get started, on the sink machine, run the sink server. This command below tel
 connections on all interfaces and to write images to a directory called local.
 
     $ ./storage-sink.py -a local
+    listening at tcp://192.168.1.137:8089
 
 Then on each device with the camera, run the streamer, for example:
 
