@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import argparse
-from itertools import count
+import functools, itertools
 import io
 from datetime import datetime
 from pprint import pprint
@@ -20,7 +20,7 @@ print(f"libzmq version is {zmq.zmq_version()}")
 print(f" pyzmq version is {zmq.__version__}")
 
 
-def camerasrc(*, mode=1, fps=2, preview=False, vflip=False, hflip=False):
+def camerasrc(*, mode=1, fps=2, preview=False, vflip=False, hflip=False, limit=0):
 
     print(f"running with sensor mode {mode}")
 
@@ -74,8 +74,12 @@ def camerasrc(*, mode=1, fps=2, preview=False, vflip=False, hflip=False):
     if preview:
         cam.start_preview(Preview.DRM, width=1920, height=1080)
     cam.start()
-    
-    for idx in count():
+
+    looper = itertools.count
+    if limit > 0:
+        looper = functools.partial(range, limit)
+
+    for idx in looper():
         # capture the image and metadata
         images, metadata = cam.capture_arrays(['main'])
         
@@ -132,12 +136,12 @@ def encode_jpeg(pipe):
         yield item
         
 
-def run(pipe, name, server, port):
+def run(pipe, name, url):
 
     context = zmq.Context()
     socket = context.socket(zmq.PUSH)
     socket.set_hwm(10)
-    socket.connect(f"tcp://{server}:{port}")
+    socket.connect(url)
     
     name = name.encode('utf-8')
     
@@ -154,23 +158,23 @@ def run(pipe, name, server, port):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--name', help='the name of this node', type=str, default=None)
+    parser.add_argument('-l', '--limit', help='total frames to send', type=int, default=0)
+    parser.add_argument('-r', '--fps', help='camera frame rate', type=int, default=2)
     parser.add_argument('-m', '--mode', help='the camera mode', type=int, default=6)
-    parser.add_argument('-r', '--fps', help='capture frames per second', type=int, default=2)
     parser.add_argument('--hflip', help='flip the image horizontally', action='store_true')
     parser.add_argument('--vflip', help='flip the image vertically', action='store_true')
-    parser.add_argument('server', help='address of the server', type=str)
-    parser.add_argument('port', help='port to listen on', type=int, nargs='?', default=8089)
+    parser.add_argument('url', help='the url to stream to (tcp://<address>:<port> or ipc://<path>)', type=str)
     args = parser.parse_args()
     
     if args.name is None:
         args.name = socket.gethostname().split('.')[0]
         
         
-    pipe = camerasrc(mode=args.mode, fps=args.fps, preview=False, vflip=args.vflip, hflip=args.hflip)
+    pipe = camerasrc(mode=args.mode, fps=args.fps, preview=False, vflip=args.vflip, hflip=args.hflip, limit=args.limit)
     pipe = generate_exif(pipe)
     pipe = encode_jpeg(pipe)
     
-    run(pipe, args.name, args.server, args.port)
+    run(pipe, args.name, args.url)
 
 
 if __name__ == "__main__":

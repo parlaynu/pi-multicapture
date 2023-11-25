@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import argparse
-from itertools import count
+import functools, itertools
 
 import socket
 import zmq
@@ -78,9 +78,13 @@ def build_pipeline(fps, hflip, vflip, crop):
     return pipe, appsink
 
 
-def loop(name, socket, appsink):
+def loop(name, socket, appsink, limit):
 
-    for idx in count():
+    looper = itertools.count
+    if limit > 0:
+        looper = functools.partial(range, limit)
+
+    for idx in looper():
         # read an image sample
         sample = appsink.pull_sample()
         if sample is None:
@@ -99,18 +103,18 @@ def loop(name, socket, appsink):
         socket.send_multipart([name, idx, data], copy=False)
 
 
-def run(name, server, port, pipe, appsink):
+def run(name, url, pipe, appsink, limit):
 
     context = zmq.Context()
     socket = context.socket(zmq.PUSH)
     socket.set_hwm(10)
-    socket.connect(f"tcp://{server}:{port}")
+    socket.connect(url)
     
     name = name.encode('utf-8')
     
     try:
         pipe.set_state(Gst.State.PLAYING)
-        loop(name, socket, appsink)
+        loop(name, socket, appsink, limit)
 
     except KeyboardInterrupt:
         pass
@@ -123,12 +127,12 @@ def run(name, server, port, pipe, appsink):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--name', help='the name of this node', type=str, default=None)
-    parser.add_argument('-r', '--fps', help='capture frames per second', type=int, default=2)
+    parser.add_argument('-l', '--limit', help='limit the number of frames to send', type=int, default=0)
+    parser.add_argument('-r', '--fps', help='camera frame rate', type=int, default=2)
     parser.add_argument('--hflip', help='flip the image horizontally', action='store_true')
     parser.add_argument('--vflip', help='flip the image vertically', action='store_true')
     parser.add_argument('-c', '--centre', help='crop the centre square of the image', action='store_true')    
-    parser.add_argument('server', help='address of the server', type=str)
-    parser.add_argument('port', help='port to listen on', type=int, nargs='?', default=8089)
+    parser.add_argument('url', help='the url to stream to (tcp://<address>:<port> or ipc://<path>)', type=str)
     args = parser.parse_args()
     
     if args.name is None:
@@ -136,7 +140,7 @@ def main():
         
     pipe, appsink = build_pipeline(args.fps, args.hflip, args.vflip, args.centre)
     if pipe:
-        run(args.name, args.server, args.port, pipe, appsink)
+        run(args.name, args.url, pipe, appsink, args.limit)
 
 
 if __name__ == "__main__":
