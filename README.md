@@ -29,11 +29,11 @@ connections on all interfaces and to write images to a directory called local.
 
 Then on each device with the camera, run the streamer, for example:
 
-    $ ./rpi-streamer.py --mode 6 --fps 2 --hflip --vflip 192.168.1.101
+    $ ./picam2-streamer.py --mode 6 --fps 2 --hflip --vflip tcp://192.168.1.137:8089
 
 This puts the camera in mode 6 (this is 1920x1080 for my camera), captures and streams images at 2 frames per second, 
 flips the image horizontally and vertically so it show up the right way, and sends the images to the sink running at 
-address 192.168.1.101.
+address 192.168.1.137.
 
 ## Sinks
 
