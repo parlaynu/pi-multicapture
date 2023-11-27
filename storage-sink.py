@@ -3,6 +3,7 @@ import argparse
 import os
 import socket
 import tempfile
+import re
 
 import zmq
 
@@ -11,47 +12,45 @@ print(f"libzmq version is {zmq.zmq_version()}")
 print(f" pyzmq version is {zmq.__version__}")
 
 
-def get_default_ip():
+def get_connect_url(url):
+    
+    if url.startswith("ipc:"):
+        return url
 
-    # fake connecting to a remote IP address so we can extract
-    # the local IP address the connection would come from
-    remote_ip = '1.1.1.1'
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.settimeout(0)
-    try:
-        s.connect((remote_ip, 53))
-        ip = s.getsockname()[0]
-    except Exception:
-        ip = '127.0.0.1'
-    finally:
-        s.close()
+    tcp_re = re.compile("^tcp://(?P<address>.+?):(?P<port>\d+)$")
+    mo = tcp_re.match(url)
+    if mo is None:
+        raise ValueError(f"unable to parse {url}")
+        
+    address = mo['address']
+    port = mo['port']
+    
+    if address == "0.0.0.0":
+        remote_ip = '1.1.1.1'
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0)
+        try:
+            s.connect((remote_ip, 53))
+            address = s.getsockname()[0]
+        except Exception:
+            address = '127.0.0.1'
+        finally:
+            s.close()
 
-    return ip
+    url = f"tcp://{address}:{port}"
+    return url
 
 
-def cam_jpeg(address, port, *, ipc=False):
+def cam_jpeg(url):
 
     # create the router socket
     context = zmq.Context()
     socket = context.socket(zmq.PULL)
+    socket.bind(url)
     
-    # need a temp directory for ipc
-    tempdir = None
-    if ipc:
-        tempdir = tempfile.TemporaryDirectory()
-        print(tempdir.name)
-    
-    if ipc:
-        socket.bind(f'ipc://{tempdir.name}/socket')
-        val = socket.getsockopt(zmq.LAST_ENDPOINT).decode('utf-8')
-        print(f"listening at {val}")
-        
-    else:
-        socket.bind(f'tcp://{address}:{port}')
-        if address == "0.0.0.0":
-            address = get_default_ip()
-        print(f"listening at tcp://{address}:{port}")
-
+    # the listen address
+    url = socket.getsockopt(zmq.LAST_ENDPOINT).decode('utf-8')
+    print(f"listening at {get_connect_url(url)}")
 
     while True:
         peer, idx, data = socket.recv_multipart()
@@ -95,10 +94,16 @@ def main():
     parser.add_argument('outdir', help='location to save images', type=str)
     args = parser.parse_args()
     
-    address = "0.0.0.0" if args.all else "127.0.0.1"
+    # the URL to bind to
+    if args.ipc:
+        tempdir = tempfile.TemporaryDirectory()
+        url = f"ipc://{tempdir.name}/socket"
+    else:
+        address = "0.0.0.0" if args.all else "127.0.0.1"
+        url = f"tcp://{address}:{args.port}"
     
     try:
-        pipe = cam_jpeg(address, args.port, ipc=args.ipc)
+        pipe = cam_jpeg(url)
         read_images(pipe, args.outdir)
 
     except KeyboardInterrupt:
