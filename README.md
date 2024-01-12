@@ -30,7 +30,7 @@ connections on all interfaces and to write images to a directory called local.
 
 Then on each device with the camera, run the streamer, for example:
 
-    $ ./picam2-streamer.py --mode 6 --fps 2 --hflip --vflip tcp://192.168.1.137:8089
+    $ ./picam2-src.py --mode 6 --fps 2 --hflip --vflip tcp://192.168.1.137:8089
 
 This puts the camera in mode 6 (this is 1920x1080 for my camera), captures and streams images at 2 frames per second, 
 flips the image horizontally and vertically so it show up the right way, and sends the images to the sink running at 
@@ -86,8 +86,8 @@ Not yet implemented.
 
 The full usage is:
 
-    $ ./picam2-streamer.py -h
-    usage: picam2-streamer.py [-h] [-n NAME] [-l LIMIT] [-r FPS] [-m MODE] [--hflip] [--vflip] url
+    $ ./picam2-src.py -h
+    usage: picam2-src.py [-h] [-n NAME] [-l LIMIT] [-r FPS] [-m MODE] [--hflip] [--vflip] url
     
     positional arguments:
       url                   the url to stream to (tcp://<address>:<port> or ipc://<path>)
@@ -104,7 +104,7 @@ The full usage is:
 
 A typical example would be:
 
-    ./picam2-streamer.py --mode 6 --fps 2 --hflip --vflip tcp://192.168.1.137:8089
+    ./picam2-src.py --mode 6 --fps 2 --hflip --vflip tcp://192.168.1.137:8089
 
 This will stream images to the sink running on host '192.168.1.137' listening on port 8089.
 
@@ -112,8 +112,8 @@ This will stream images to the sink running on host '192.168.1.137' listening on
 
 Full usage is:
 
-    $ ./nvargus-streamer.py -h
-    usage: nvargus-streamer.py [-h] [-n NAME] [-l LIMIT] [-r FPS] [--hflip]
+    $ ./nvargus-src.py -h
+    usage: nvargus-src.py [-h] [-n NAME] [-l LIMIT] [-r FPS] [--hflip]
                                [--vflip] [-c]
                                url
                                
@@ -133,7 +133,7 @@ Full usage is:
   
 A typical example would be:
 
-      ./nvargus-streamer.py --fps 2 --hflip --vflip tcp://192.168.1.137:8089
+      ./nvargus-src.py --fps 2 --hflip --vflip tcp://192.168.1.137:8089
   
 This will stream images to the sink running on host '192.168.1.137' listening on port 8089.
 
